@@ -35,9 +35,12 @@ trait CSV {
     )
 
     def Cell: Rule1[String] = rule (
-      QuotedCell
-      | UnquotedCell
-      | (str("") ~> identity)
+      QuotedCell | UnquotedCell | EmptyCell
+    )
+
+    def EmptyCell: Rule1[String] = rule (
+      str("")
+      ~> identity
     )
 
     def UnquotedCell: Rule1[String] = rule (
@@ -46,14 +49,11 @@ trait CSV {
     )
 
     def QuotedCell: Rule1[String] = rule (
-      QuotedString
-      | EmptyQuotes
+      QuotedString | EmptyQuotes
     )
 
     def QuotedString: Rule1[String] = rule (
-      Quote
-      ~ oneOrMore(EscapedQuote | NonQuote)
-      ~ Quote
+      Quote ~ oneOrMore(EscapedQuote | NonQuote) ~ Quote
       ~~> (_.mkString)
     )
 
@@ -63,8 +63,7 @@ trait CSV {
     )
 
     def NonQuote: Rule1[String] = rule (
-      !Quote
-      ~ ANY
+      !Quote ~ ANY
       ~> identity
     )
 
