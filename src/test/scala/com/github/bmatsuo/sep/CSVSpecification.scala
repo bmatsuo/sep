@@ -10,13 +10,14 @@ object CSVSpecification extends Properties("CSV") {
   import CSV._
 
   import scala.language.implicitConversions
-  implicit def shrinkNel(implicit s: Shrink[String]): Shrink[NonEmptyList[String]] =  Shrink { nel ⇒
+
+  implicit def shrinkNel[A](implicit s: Shrink[A]): Shrink[NonEmptyList[A]] = Shrink { nel ⇒
     (for {
       h ← Shrink.shrink(nel.head)
       q ← Shrink.shrink(nel.tail)
-    } yield NonEmptyList(h, q:_*)) //append
-    //(for (h ← Shrink.shrink(nel.head)) yield NonEmptyList(h, nel.tail:_*)) append
-    //(for (q ← Shrink.shrink(nel.tail)) yield NonEmptyList(nel.head, q:_*))
+    } yield NonEmptyList(h, q:_*)) append
+    (for (h ← Shrink.shrink(nel.head)) yield NonEmptyList(h, nel.tail:_*)) append
+    (for (q ← Shrink.shrink(nel.tail)) yield NonEmptyList(nel.head, q:_*))
   }
 
   val allChars =  {
@@ -39,7 +40,7 @@ object CSVSpecification extends Properties("CSV") {
 
   val boundedStr =
     for {
-      len   ← Gen.choose(0, 5)
+      len   ← Gen.choose(0, 3)
       chars ← Gen.listOfN(len, anyChar)
     } yield chars.mkString
 
@@ -57,7 +58,7 @@ object CSVSpecification extends Properties("CSV") {
   val textQuoteEscapedChar =
     Gen.frequency(
       (1, Gen.const(rfc4180.qesc)),
-      (100, textNonQuoteChar.map(_.toString)))
+      (100, textNonQuoteChar))
 
   val textQuotedString =
     for {
@@ -82,12 +83,12 @@ object CSVSpecification extends Properties("CSV") {
     Gen.nonEmptyListOf(textRow)
       .map(_.mkString("\r\n"))
 
-  ///*
+  /*
   property("stablility") = forAll(table) { (table: Table) ⇒
     val cycle = rfc4180.load(rfc4180.export(table))
     (cycle | empty) == table
   }
-  //*/
+  */
 
   ///*
   property("scala-csv stability") = forAll (table) { (table: Table) ⇒

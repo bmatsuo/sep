@@ -101,9 +101,6 @@ trait CSV {
     status | errors.reduce(_ |+| _)
   }
 
-  import scalaz._
-  import Scalaz._
-
   def export(csv: Table): String =
     csv.map(exportRow).stream.mkString("\r\n")
 
@@ -112,8 +109,12 @@ trait CSV {
 
   def quoteEscape(s: String): String = {
     val escaped = s.flatMap(c ⇒ (c == quote) ? qesc | c.toString)
-
-    (s == escaped) ? s | quote.toString + escaped + quote.toString
+    val needsQuote =
+      s != escaped ||
+        s.contains(comma.toString) ||
+        s.contains("\n") ||
+        s.contains("\r")
+    needsQuote ? (quote.toString + escaped + quote.toString) | s
   }
 }
 
